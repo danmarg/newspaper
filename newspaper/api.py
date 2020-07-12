@@ -87,7 +87,7 @@ def fulltext(html, language='en'):
     doc = config.get_parser().fromstring(html)
     doc = document_cleaner.clean(doc)
 
-    top_node = extractor.calculate_best_node(doc)
-    top_node = extractor.post_cleanup(top_node)
-    text, article_html = output_formatter.get_formatted(top_node)
+    top_nodes = extractor.calculate_best_nodes(doc)
+    top_nodes = extractor.post_cleanup(top_nodes)
+    text, article_html = output_formatter.get_formatted(top_nodes)
     return text

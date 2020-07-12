@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 class OutputFormatter(object):
 
     def __init__(self, config):
-        self.top_node = None
+        self.top_nodes = []
         self.config = config
         self.parser = self.config.get_parser()
         self.language = config.language
@@ -35,14 +35,14 @@ class OutputFormatter(object):
             self.stopwords_class = \
                 self.config.get_stopwords_class(meta_lang)
 
-    def get_top_node(self):
-        return self.top_node
+    def get_top_nodes(self):
+        return self.top_nodes
 
-    def get_formatted(self, top_node):
+    def get_formatted(self, top_nodes):
         """Returns the body text of an article, and also the body article
         html if specified. Returns in (text, html) form
         """
-        self.top_node = top_node
+        self.top_nodes = top_nodes
         html, text = '', ''
 
         self.remove_negativescores_nodes()
@@ -55,60 +55,64 @@ class OutputFormatter(object):
         self.add_newline_to_li()
         self.replace_with_text()
         self.remove_empty_tags()
-        self.remove_trailing_media_div()
+        self.remove_trailing_media_div()  # This is a problem
         text = self.convert_to_text()
-        # print(self.parser.nodeToString(self.get_top_node()))
         return (text, html)
 
     def convert_to_text(self):
         txts = []
-        for node in list(self.get_top_node()):
-            try:
-                txt = self.parser.getText(node)
-            except ValueError as err:  # lxml error
-                log.info('%s ignoring lxml node error: %s', __title__, err)
-                txt = None
+        for outer in self.get_top_nodes():
+            for node in list(outer):
+                try:
+                    txt = self.parser.getText(node)
+                except ValueError as err:  # lxml error
+                    log.info('%s ignoring lxml node error: %s', __title__, err)
+                    txt = None
 
-            if txt:
-                txt = unescape(txt)
-                txt_lis = innerTrim(txt).split(r'\n')
-                txt_lis = [n.strip(' ') for n in txt_lis]
-                txts.extend(txt_lis)
+                if txt:
+                    txt = unescape(txt)
+                    txt_lis = innerTrim(txt).split(r'\n')
+                    txt_lis = [n.strip(' ') for n in txt_lis]
+                    txts.extend(txt_lis)
         return '\n\n'.join(txts)
 
     def convert_to_html(self):
-        cleaned_node = self.parser.clean_article_html(self.get_top_node())
-        return self.parser.nodeToString(cleaned_node)
+        r = ''
+        for n in self.get_top_nodes():
+          cleaned_node = self.parser.clean_article_html(n)
+          r += self.parser.nodeToString(cleaned_node)
+        return r
 
     def add_newline_to_br(self):
-        for e in self.parser.getElementsByTag(self.top_node, tag='br'):
+        for e in self.parser.getElementsByTag(self.top_nodes, tag='br'):
             e.text = r'\n'
 
     def add_newline_to_li(self):
-        for e in self.parser.getElementsByTag(self.top_node, tag='ul'):
-            li_list = self.parser.getElementsByTag(e, tag='li')
+        for e in self.parser.getElementsByTag(self.top_nodes, tag='ul'):
+            li_list = self.parser.getElementsByTag([e], tag='li')
             for li in li_list[:-1]:
                 li.text = self.parser.getText(li) + r'\n'
-                for c in self.parser.getChildren(li):
+                for c in self.parser.getChildren([li]):
                     self.parser.remove(c)
 
     def links_to_text(self):
         """Cleans up and converts any nodes that should be considered
         text into text.
         """
-        self.parser.stripTags(self.get_top_node(), 'a')
+        self.parser.stripTags(self.get_top_nodes(), 'a')
 
     def remove_negativescores_nodes(self):
         """If there are elements inside our top node that have a
         negative gravity score, let's give em the boot.
         """
-        gravity_items = self.parser.css_select(
-            self.top_node, "*[gravityScore]")
-        for item in gravity_items:
-            score = self.parser.getAttribute(item, 'gravityScore')
-            score = float(score) if score else 0
-            if score < 1:
-                item.getparent().remove(item)
+        for node in self.top_nodes:
+            gravity_items = self.parser.css_select(
+                node, "*[gravityScore]")
+            for item in gravity_items:
+                score = self.parser.getAttribute(item, 'gravityScore')
+                score = float(score) if score else 0
+                if score < 1:
+                    item.getparent().remove(item)
 
     def replace_with_text(self):
         """
@@ -118,14 +122,14 @@ class OutputFormatter(object):
         code : http://lxml.de/api/lxml.etree-module.html#strip_tags
         """
         self.parser.stripTags(
-            self.get_top_node(), 'b', 'strong', 'i', 'br', 'sup')
+            self.get_top_nodes(), 'b', 'strong', 'i', 'br', 'sup')
 
     def remove_empty_tags(self):
         """It's common in top_node to exit tags that are filled with data
         within properties but not within the tags themselves, delete them
         """
         all_nodes = self.parser.getElementsByTags(
-            self.get_top_node(), ['*'])
+            self.get_top_nodes(), ['*'])
         all_nodes.reverse()
         for el in all_nodes:
             tag = self.parser.getTag(el)
@@ -133,9 +137,9 @@ class OutputFormatter(object):
             if (tag != 'br' or text != '\\r') \
                     and not text \
                     and len(self.parser.getElementsByTag(
-                        el, tag='object')) == 0 \
+                        [el], tag='object')) == 0 \
                     and len(self.parser.getElementsByTag(
-                        el, tag='embed')) == 0:
+                        [el], tag='embed')) == 0:
                 self.parser.remove(el)
 
     def remove_trailing_media_div(self):
@@ -151,7 +155,7 @@ class OutputFormatter(object):
             """Computes depth of an lxml element via BFS, this would be
             in parser if it were used anywhere else besides this method
             """
-            children = self.parser.getChildren(node)
+            children = self.parser.getChildren([node])
             if not children:
                 return depth
             max_depth = 0
@@ -161,7 +165,7 @@ class OutputFormatter(object):
                     max_depth = e_depth
             return max_depth
 
-        top_level_nodes = self.parser.getChildren(self.get_top_node())
+        top_level_nodes = self.parser.getChildren(self.get_top_nodes())
         if len(top_level_nodes) < 3:
             return
 
@@ -171,5 +175,5 @@ class OutputFormatter(object):
         if last_node_class in NON_MEDIA_CLASSES:
             return
 
-        if get_depth(last_node) >= 2:
+        if get_depth(last_node) >= 6:  # Magic number!
             self.parser.remove(last_node)

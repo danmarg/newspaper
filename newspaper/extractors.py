@@ -770,7 +770,7 @@ class ContentExtractor(object):
                 tags.append(tag)
         return set(tags)
 
-    def calculate_best_node(self, doc):
+    def calculate_best_nodes(self, doc):
         top_node = None
         nodes_to_check = self.nodes_to_check(doc)
         starting_boost = float(1.0)
@@ -792,6 +792,7 @@ class ContentExtractor(object):
         bottom_negativescore_nodes = float(nodes_number) * 0.25
 
         for node in nodes_with_text:
+
             boost_score = float(0)
             # boost
             if self.is_boostable(node):
@@ -817,11 +818,13 @@ class ContentExtractor(object):
             self.update_score(parent_node, upscore)
             self.update_node_count(parent_node, 1)
 
+
             if parent_node not in parent_nodes:
                 parent_nodes.append(parent_node)
 
             # Parent of parent node
             parent_parent_node = self.parser.getParent(parent_node)
+
             if parent_parent_node is not None:
                 self.update_node_count(parent_parent_node, 1)
                 self.update_score(parent_parent_node, upscore / 2)
@@ -830,17 +833,18 @@ class ContentExtractor(object):
             cnt += 1
             i += 1
 
-        top_node_score = 0
+        output_nodes = []
         for e in parent_nodes:
             score = self.get_score(e)
-
-            if score > top_node_score:
-                top_node = e
-                top_node_score = score
-
-            if top_node is None:
-                top_node = e
-        return top_node
+            if score > 20.0:  # Magic number!
+                # If parent is in parent_nodes, skip:
+                parent = self.parser.getParent(e)
+                if parent is not None and parent in parent_nodes:
+                    continue
+                output_nodes.append(e)
+                #print('[[[[',score,']]]---',self.parser.getText(e),'---')
+            #print('HERE[[[',score,']]]$$$',self.parser.getText(e),'$$$')
+        return output_nodes
 
     def is_boostable(self, node):
         """A lot of times the first paragraph might be the caption under an image

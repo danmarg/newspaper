@@ -74,8 +74,8 @@ class Parser(object):
     @classmethod
     def clean_article_html(cls, node):
         article_cleaner = lxml.html.clean.Cleaner()
-        article_cleaner.javascript = True
         article_cleaner.style = True
+        article_cleaner.javascript = True
         article_cleaner.allow_tags = [
             'a', 'span', 'p', 'br', 'strong', 'b',
             'em', 'i', 'tt', 'code', 'pre', 'blockquote', 'img', 'h1',
@@ -96,8 +96,9 @@ class Parser(object):
         node.tag = tag
 
     @classmethod
-    def stripTags(cls, node, *tags):
-        lxml.etree.strip_tags(node, *tags)
+    def stripTags(cls, nodes, *tags):
+        for node in nodes:
+            lxml.etree.strip_tags(node, *tags)
 
     @classmethod
     def getElementById(cls, node, idd):
@@ -109,7 +110,7 @@ class Parser(object):
 
     @classmethod
     def getElementsByTag(
-            cls, node, tag=None, attr=None, value=None, childs=False, use_regex=False) -> list:
+            cls, nodes, tag=None, attr=None, value=None, childs=False, use_regex=False) -> list:
         NS = None
         # selector = tag or '*'
         selector = 'descendant-or-self::%s' % (tag or '*')
@@ -120,11 +121,14 @@ class Parser(object):
             else:
                 trans = 'translate(@%s, "%s", "%s")' % (attr, string.ascii_uppercase, string.ascii_lowercase)
                 selector = '%s[contains(%s, "%s")]' % (selector, trans, value.lower())
-        elems = node.xpath(selector, namespaces=NS)
-        # remove the root node
-        # if we have a selection tag
-        if node in elems and (tag or childs):
-            elems.remove(node)
+        elems = []
+        for node in nodes:
+            es = node.xpath(selector, namespaces=NS)
+            # remove the root node
+            # if we have a selection tag
+            if node in es and (tag or childs):
+                es.remove(node)
+            elems += es
         return elems
 
     @classmethod
@@ -163,14 +167,20 @@ class Parser(object):
         return cls.fromstring(text)
 
     @classmethod
-    def getChildren(cls, node):
-        return node.getchildren()
+    def getChildren(cls, nodes):
+        children = []
+        for node in nodes:
+            children += node.getchildren()
+        return children
 
     @classmethod
-    def getElementsByTags(cls, node, tags):
+    def getElementsByTags(cls, nodes, tags):
         selector = 'descendant::*[%s]' % (
             ' or '.join('self::%s' % tag for tag in tags))
-        elems = node.xpath(selector)
+        elems = []
+        for node in nodes:
+            es = node.xpath(selector)
+            elems += es
         return elems
 
     @classmethod

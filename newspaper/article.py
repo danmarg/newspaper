@@ -4,6 +4,7 @@ __author__ = 'Lucas Ou-Yang'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2014, Lucas Ou-Yang'
 
+import functools
 import logging
 import copy
 import os
@@ -134,14 +135,14 @@ class Article(object):
         # The canonical link of this article if found in the meta data
         self.canonical_link = ""
 
-        # Holds the top element of the DOM that we determine is a candidate
+        # Holds the top elements of the DOM that we determine are candidates
         # for the main body of the article
-        self.top_node = None
+        self.top_nodes = []
 
         # A deepcopied clone of the above object before heavy parsing
         # operations, useful for users to query data in the
         # "most important part of the page"
-        self.clean_top_node = None
+        self.clean_top_nodes = []
 
         # lxml DOM object generated from HTML
         self.doc = None
@@ -269,19 +270,16 @@ class Article(object):
 
         # Before any computations on the body, clean DOM object
         self.doc = document_cleaner.clean(self.doc)
-
-        self.top_node = self.extractor.calculate_best_node(self.doc)
-        if self.top_node is not None:
-            video_extractor = VideoExtractor(self.config, self.top_node)
-            self.set_movies(video_extractor.get_videos())
-
-            self.top_node = self.extractor.post_cleanup(self.top_node)
-            self.clean_top_node = copy.deepcopy(self.top_node)
-
-            text, article_html = output_formatter.get_formatted(
-                self.top_node)
-            self.set_article_html(article_html)
-            self.set_text(text)
+        self.top_nodes = self.extractor.calculate_best_nodes(self.doc)
+        self.set_movies(functools.reduce(lambda x, y: x+y,
+            [VideoExtractor(self.config, n).get_videos()
+                for n in self.top_nodes], []))
+        self.top_nodes = [self.extractor.post_cleanup(n)
+                for n in self.top_nodes]
+        self.clean_top_nodes = copy.deepcopy(self.top_nodes)
+        text, article_html = output_formatter.get_formatted(self.top_nodes)
+        self.set_article_html(article_html)
+        self.set_text(text)
 
         self.fetch_images()
 
@@ -299,13 +297,16 @@ class Article(object):
                 imgs.add(self.meta_img)
             self.set_imgs(imgs)
 
-        if self.clean_top_node is not None and not self.has_top_image():
-            first_img = self.extractor.get_first_img_url(
-                self.url, self.clean_top_node)
-            if self.config.fetch_images:
-                self.set_top_img(first_img)
-            else:
-                self.set_top_img_no_check(first_img)
+        if self.clean_top_nodes and not self.has_top_image():
+            for n in self.clean_top_nodes:
+                first_img = self.extractor.get_first_img_url(
+                    self.url, n)
+                if first_img:
+                    if self.config.fetch_images:
+                        self.set_top_img(first_img)
+                    else:
+                        self.set_top_img_no_check(first_img)
+                    break
 
         if not self.has_top_image() and self.config.fetch_images:
             self.set_reddit_top_img()
