@@ -80,6 +80,10 @@ class OutputFormatter(object):
         r = ''
         for n in self.get_top_nodes():
           cleaned_node = self.parser.clean_article_html(n)
+          # Drop empty children.
+          for c in cleaned_node:
+              if not self.parser.getText(c):
+                  c.getparent().remove(c)
           r += self.parser.nodeToString(cleaned_node)
         return r
 
