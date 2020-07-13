@@ -78,6 +78,11 @@ class Configuration(object):
         # TODO: Actually make this work
         # self.use_cached_categories = True
 
+        # Lambda of type str -> bool. If returns true, node will be dropped
+        # from the cleaned HTML. This only matters if keep_article_html is
+        # True.
+        self.drop_text_node = lambda x: x == ''
+
     def get_language(self):
         return self._language
 

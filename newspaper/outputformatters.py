@@ -79,12 +79,10 @@ class OutputFormatter(object):
     def convert_to_html(self):
         r = ''
         for n in self.get_top_nodes():
-            # TODO: Optionally (?) expand IMG tags into inline base64 images?
             cleaned_node = self.parser.clean_article_html(n)
             # Drop empty children.
             for c in cleaned_node:
-                # TODO: drop children with text that matches a regexp, like 'Advertisement'?
-                if not self.parser.getText(c):
+                if self.config.drop_text_node(self.parser.getText(c)):
                     c.getparent().remove(c)
             r += self.parser.nodeToString(cleaned_node)
         return r
