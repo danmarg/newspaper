@@ -83,6 +83,7 @@ class OutputFormatter(object):
             cleaned_node = self.parser.clean_article_html(n)
             # Drop empty children.
             for c in cleaned_node:
+                # TODO: drop children with text that matches a regexp, like 'Advertisement'?
                 if not self.parser.getText(c):
                     c.getparent().remove(c)
             r += self.parser.nodeToString(cleaned_node)
