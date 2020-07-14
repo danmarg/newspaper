@@ -771,7 +771,6 @@ class ContentExtractor(object):
         return set(tags)
 
     def calculate_best_nodes(self, doc):
-        top_node = None
         nodes_to_check = self.nodes_to_check(doc)
         starting_boost = float(1.0)
         cnt = 0
@@ -838,12 +837,16 @@ class ContentExtractor(object):
             score = self.get_score(e)
             if score > 20.0:  # Magic number!
                 # If parent is in parent_nodes, skip:
+                skip = False
                 parent = self.parser.getParent(e)
-                if parent is not None and parent in parent_nodes:
+                while parent is not None:
+                    if parent in parent_nodes:
+                        skip = True
+                        break
+                    parent = self.parser.getParent(parent)
+                if skip:
                     continue
                 output_nodes.append(e)
-                #print('[[[[',score,']]]---',self.parser.getText(e),'---')
-            #print('HERE[[[',score,']]]$$$',self.parser.getText(e),'$$$')
         return output_nodes
 
     def is_boostable(self, node):
