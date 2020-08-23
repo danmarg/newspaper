@@ -791,7 +791,6 @@ class ContentExtractor(object):
         bottom_negativescore_nodes = float(nodes_number) * 0.25
 
         for node in nodes_with_text:
-
             boost_score = float(0)
             # boost
             if self.is_boostable(node):
@@ -817,9 +816,9 @@ class ContentExtractor(object):
             self.update_score(parent_node, upscore)
             self.update_node_count(parent_node, 1)
 
-
+            to_append = None
             if parent_node not in parent_nodes:
-                parent_nodes.append(parent_node)
+                to_append = parent_node
 
             # Parent of parent node
             parent_parent_node = self.parser.getParent(parent_node)
@@ -828,7 +827,10 @@ class ContentExtractor(object):
                 self.update_node_count(parent_parent_node, 1)
                 self.update_score(parent_parent_node, upscore / 2)
                 if parent_parent_node not in parent_nodes:
-                    parent_nodes.append(parent_parent_node)
+                    to_append = parent_parent_node
+
+            if to_append is not None:
+                parent_nodes.append(to_append)
             cnt += 1
             i += 1
 
@@ -1051,10 +1053,10 @@ class ContentExtractor(object):
         """Remove any divs that looks like non-content, clusters of links,
         or paras with no gusto; add adjacent nodes which look contenty
         """
-        node = self.add_siblings(top_node)
-        for e in self.parser.getChildren(node):
+        #node = self.add_siblings(top_node)
+        for e in self.parser.getChildren(top_node):
             e_tag = self.parser.getTag(e)
             if e_tag != 'p':
                 if self.is_highlink_density(e):
                     self.parser.remove(e)
-        return node
+        return top_node

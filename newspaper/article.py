@@ -276,6 +276,7 @@ class Article(object):
                 for n in self.top_nodes], []))
         self.top_nodes = [self.extractor.post_cleanup(n)
                 for n in self.top_nodes]
+
         self.clean_top_nodes = copy.deepcopy(self.top_nodes)
         text, article_html = output_formatter.get_formatted(self.top_nodes)
         self.set_article_html(article_html)
