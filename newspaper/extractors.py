@@ -790,6 +790,7 @@ class ContentExtractor(object):
         negative_scoring = 0
         bottom_negativescore_nodes = float(nodes_number) * 0.25
 
+
         for node in nodes_with_text:
             boost_score = float(0)
             # boost
@@ -835,20 +836,23 @@ class ContentExtractor(object):
             i += 1
 
         output_nodes = []
+
+        parent_nodes = [e for e in parent_nodes
+                        if self.get_score(e) > 20.0  # Magic number!
+                        ]
+
         for e in parent_nodes:
-            score = self.get_score(e)
-            if score > 20.0:  # Magic number!
-                # If parent is in parent_nodes, skip:
-                skip = False
-                parent = self.parser.getParent(e)
-                while parent is not None:
-                    if parent in parent_nodes:
-                        skip = True
-                        break
-                    parent = self.parser.getParent(parent)
-                if skip:
-                    continue
-                output_nodes.append(e)
+            # If parent is in parent_nodes, skip:
+            skip = False
+            parent = self.parser.getParent(e)
+            while parent is not None:
+                if parent in parent_nodes:
+                    skip = True
+                    break
+                parent = self.parser.getParent(parent)
+            if skip:
+                continue
+            output_nodes.append(e)
         return output_nodes
 
     def is_boostable(self, node):

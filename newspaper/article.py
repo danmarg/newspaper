@@ -270,6 +270,7 @@ class Article(object):
 
         # Before any computations on the body, clean DOM object
         self.doc = document_cleaner.clean(self.doc)
+
         self.top_nodes = self.extractor.calculate_best_nodes(self.doc)
         self.set_movies(functools.reduce(lambda x, y: x+y,
             [VideoExtractor(self.config, n).get_videos()
