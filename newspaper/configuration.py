@@ -86,7 +86,8 @@ class Configuration(object):
         # dropped from cleaned HTML. This only matters if keep_article_html is
         # true.
         self.drop_node = lambda elem, text: self.drop_text_node(text) and \
-            elem.find('img') is None
+            not [x for x in elem.findall('img') if 'src' in x.attrib]
+                 # Keep if there are any img tags.
 
         # Dict of type [str]lambda, where lambda is of type Element ->
         # None, and the dict key is the element type to transform.
