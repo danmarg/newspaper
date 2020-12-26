@@ -82,8 +82,13 @@ class Configuration(object):
         # from the cleaned HTML. This only matters if keep_article_html is
         # True.
         self.drop_text_node = lambda x: x == ''
+        # Lambda of type elem, str -> bool. If returns true, node will be
+        # dropped from cleaned HTML. This only matters if keep_article_html is
+        # true.
+        self.drop_node = lambda elem, text: self.drop_text_node(text) and \
+            elem.find('img') is None
 
-        # Dict of type [string]lambda, where lambda is of type Element ->
+        # Dict of type [str]lambda, where lambda is of type Element ->
         # None, and the dict key is the element type to transform.
         self.element_transformers = {}
 

@@ -85,7 +85,8 @@ class OutputFormatter(object):
             cleaned_node = self.parser.clean_article_html(n)
             # Drop empty children.
             for c in cleaned_node:
-                if self.config.drop_text_node(self.parser.getText(c)):
+                txt = self.parser.getText(c)
+                if self.config.drop_node(c, txt):
                     c.getparent().remove(c)
             r += self.parser.nodeToString(cleaned_node)
         return r
