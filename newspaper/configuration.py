@@ -83,6 +83,10 @@ class Configuration(object):
         # True.
         self.drop_text_node = lambda x: x == ''
 
+        # Dict of type [string]lambda, where lambda is of type Element ->
+        # None, and the dict key is the element type to transform.
+        self.element_transformers = {}
+
     def get_language(self):
         return self._language
 

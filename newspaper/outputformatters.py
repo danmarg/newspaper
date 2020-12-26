@@ -78,6 +78,9 @@ class OutputFormatter(object):
 
     def convert_to_html(self):
         r = ''
+        for k, v in self.config.element_transformers.items():
+            for e in self.parser.getElementsByTag(self.top_nodes, k):
+                v(e)
         for n in self.get_top_nodes():
             cleaned_node = self.parser.clean_article_html(n)
             # Drop empty children.
