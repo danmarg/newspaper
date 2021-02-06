@@ -81,7 +81,7 @@ class Configuration(object):
         # Lambda of type str -> bool. If returns true, node will be dropped
         # from the cleaned HTML. This only matters if keep_article_html is
         # True.
-        self.drop_text_node = lambda x: x == ''
+        self.drop_text_node = lambda x: x.strip() == ''
         # Lambda of type elem, str -> bool. If returns true, node will be
         # dropped from cleaned HTML. This only matters if keep_article_html is
         # true.
