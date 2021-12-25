@@ -609,7 +609,7 @@ class ContentExtractor(object):
         flag indicates we don't parse via lxml and just search the html.
         """
         if doc_or_html is None:
-            log.critical('Must extract urls from either html, text or doc!')
+            log.warning('Must extract urls from either html, text or doc!')
             return []
         # If we are extracting from raw text
         if regex:

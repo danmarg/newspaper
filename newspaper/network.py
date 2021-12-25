@@ -111,7 +111,7 @@ class MRequest(object):
             if self.config.http_success_only:
                 self.resp.raise_for_status()
         except requests.exceptions.RequestException as e:
-            log.critical('[REQUEST FAILED] ' + str(e))
+            log.warning('[REQUEST FAILED] ' + str(e))
 
 
 def multithread_request(urls, config=None):
