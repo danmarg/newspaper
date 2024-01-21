@@ -123,7 +123,8 @@ class ContentExtractor(object):
                         _authors.append(' '.join(curname))
                         curname = []
 
-                elif not contains_digits(token):
+                elif not contains_digits(token) and not re.match(
+                        r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)', token):
                     curname.append(token)
 
             # One last check at end
@@ -156,6 +157,11 @@ class ContentExtractor(object):
                 content = match.text_content() or ''
             if len(content) > 0:
                 authors.extend(parse_byline(content))
+
+        # Search by meta tags:
+        if not authors:
+            authors.extend(parse_byline(
+              self.get_meta_content(doc, 'meta[property="article:author"]')))
 
         return uniqify_list(authors)
 
