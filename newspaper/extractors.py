@@ -103,12 +103,14 @@ class ContentExtractor(object):
 
             # Remove original By statement
             search_str = re.sub('[bB][yY][\:\s]|[fF]rom[\:\s]', '', search_str)
+            search_str = re.sub(r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)',  '', search_str)
 
             search_str = search_str.strip()
 
             # Chunk the line by non alphanumeric tokens (few name exceptions)
             # >>> re.split("[^\w\'\-\.]", "Tyler G. Jones, Lucas Ou, Dean O'Brian and Ronald")
             # ['Tyler', 'G.', 'Jones', '', 'Lucas', 'Ou', '', 'Dean', "O'Brian", 'and', 'Ronald']
+
             name_tokens = re.split("[^\w\'\-\.]", search_str)
             name_tokens = [s.strip() for s in name_tokens]
 
@@ -123,8 +125,7 @@ class ContentExtractor(object):
                         _authors.append(' '.join(curname))
                         curname = []
 
-                elif not contains_digits(token) and not re.match(
-                        r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)', token):
+                elif not contains_digits(token):
                     curname.append(token)
 
             # One last check at end
